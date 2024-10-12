@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+    "name": "Tic Tac Toe Peer-to-Peer",
+    "version": "1.0",
+    "description": "Multiplayer Tic Tac Toe game using PeerJS",
+    "permissions": [
+      "storage",
+      "identity"
+    ],
+    "action": {
+      "default_popup": "index.html"
+    },
+    "background": {
+      "service_worker": "background.js"
+    }
+  }
+  
