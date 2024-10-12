@@ -2,14 +2,9 @@ const peer = new Peer();
 let conn;
 let playerSymbol;
 let isMyTurn = false;
-const storageKey = "TIC_TAC_TOE_PEER_MAP";
-
-let friendlyName;
 
 peer.on('open', id => {
-    friendlyName = generateFriendlyName();
-    savePeerId(friendlyName, id);
-    document.getElementById('friendly-name').innerText = friendlyName;
+    document.getElementById('peer-id').innerText = id;
     updateStatus("Waiting for opponent...", "fas fa-spinner fa-pulse");
 });
 
@@ -26,23 +21,16 @@ peer.on('connection', connection => {
 document.getElementById('new-game').addEventListener('click', () => {
     resetBoard();
     updateStatus("Waiting for opponent...", "fas fa-spinner fa-pulse");
-    friendlyName = generateFriendlyName();
-    savePeerId(friendlyName, peer.id);
-    document.getElementById('friendly-name').innerText = friendlyName;
+    document.getElementById('peer-id').innerText = peer.id;
 });
 
 document.getElementById('connect').addEventListener('click', () => {
-    const opponentName = document.getElementById('opponent-name').value;
-    const peerId = retrievePeerId(opponentName);
-    if (peerId) {
-        conn = peer.connect(peerId);
-        playerSymbol = 'X';
-        isMyTurn = true;
-        updateStatus("Connected! Your Turn", "fas fa-gamepad");
-        setupConnection();
-    } else {
-        alert(`No peer found with friendly game ID: ${opponentName}`);
-    }
+    const opponentId = document.getElementById('opponent-id').value;
+    conn = peer.connect(opponentId);
+    playerSymbol = 'X';
+    isMyTurn = true;
+    updateStatus("Connected! Your Turn", "fas fa-gamepad");
+    setupConnection();
 });
 
 const cells = document.querySelectorAll('.cell');
@@ -121,34 +109,8 @@ function isBoardFull() {
     return [...cells].every(cell => cell.innerText !== '');
 }
 
-// Helper function to generate a friendly name
-function generateFriendlyName() {
-    const adjectives = ["Amazing", "Brave", "Calm", "Delightful", "Eager", "Fancy", "Generous"];
-    const nouns = ["Lion", "Tiger", "Bear", "Elephant", "Wombat", "Giraffe", "Panda"];
-
-    const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
-
-    // Combining adjective, noun, and a random number for more uniqueness
-    return `${randomAdjective}${randomNoun}${Math.floor(1000 + Math.random() * 9000)}`;
-}
-
-// Save peer ID mapped to a friendly name to local storage
-function savePeerId(friendlyName, peerId) {
-    let peerMap = JSON.parse(localStorage.getItem(storageKey)) || {};
-    peerMap[friendlyName] = peerId;
-    localStorage.setItem(storageKey, JSON.stringify(peerMap));
-}
-
-// Retrieve peer ID using a friendly name from local storage
-function retrievePeerId(friendlyName) {
-    const peerMap = JSON.parse(localStorage.getItem(storageKey)) || {};
-    return peerMap[friendlyName];
-}
-
 // Function to dynamically update status text and icon
 function updateStatus(message, iconClass) {
     const statusDiv = document.getElementById('status');
     statusDiv.innerHTML = `<i class="${iconClass}"></i> ${message}`;
 }
-
