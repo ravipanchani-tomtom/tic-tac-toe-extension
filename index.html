@@ -1,32 +1,50 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <div id="game">
-        <div id="status"><i class="fas fa-spinner fa-pulse"></i> Waiting for opponent...</div>
-        <div>Your Peer ID: <span id="peer-id"></span></div>
-        <div>
-            <input type="text" id="opponent-id" placeholder="Enter opponent's peer ID">
-            <button id="connect">Connect</button>
-        </div>
-        <div id="board">
-            <div class="cell" data-index="0"></div>
-            <div class="cell" data-index="1"></div>
-            <div class="cell" data-index="2"></div>
-            <div class="cell" data-index="3"></div>
-            <div class="cell" data-index="4"></div>
-            <div class="cell" data-index="5"></div>
-            <div class="cell" data-index="6"></div>
-            <div class="cell" data-index="7"></div>
-            <div class="cell" data-index="8"></div>
-        </div>
-        <button id="new-game"><i class="fas fa-sync-alt"></i> New Game</button>
-    </div>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe with PeerJS</title>
+    <link rel="stylesheet" href="styles.css">
     <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <script src="utils.js"></script>
-    <script src="game.js"></script>
-</body>
-</html>
+    <script defer src="game.js"></script>
+  </head>
+  <body>
+    <div class="game-container">
+      <div id="status">Choose a mode to start the game...</div>
+      <div id="modeSelection">
+        <button id="hostBtn">Host Game</button>
+        <button id="joinBtn">Join Game</button>
+      </div>
+      <div id="gameUI" style="display:none;">
+        <div id="board">
+          <div class="row">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+          </div>
+          <div class="row">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+          </div>
+          <div class="row">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+          </div>
+        </div>
+        <div id="actions">
+          <button id="newGameBtn">New Game</button>
+        </div>
+        <div id="peerIdContainer">
+          Your Peer ID: <input type="text" id="peerId" readonly>
+        </div>
+        <div id="connectContainer">
+          Connect to Peer ID: <input type="text" id="connectId">
+          <button id="connectBtn">Connect</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>
+  

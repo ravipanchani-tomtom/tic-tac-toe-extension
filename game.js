@@ -1,116 +1,167 @@
-const peer = new Peer();
+let peer = new Peer();
 let conn;
-let playerSymbol;
-let isMyTurn = false;
+let currentPlayer = 'X';
+let myTurn = false;
+const statusDiv = document.getElementById('status');
+const boardDiv = document.getElementById('board');
+const newGameBtn = document.getElementById('newGameBtn');
+const peerIdInput = document.getElementById('peerId');
+const connectIdInput = document.getElementById('connectId');
+const connectBtn = document.getElementById('connectBtn');
+const hostBtn = document.getElementById('hostBtn');
+const joinBtn = document.getElementById('joinBtn');
+const gameUI = document.getElementById('gameUI');
+const modeSelection = document.getElementById('modeSelection');
 
-peer.on('open', id => {
-    document.getElementById('peer-id').innerText = id;
-    updateStatus("Waiting for opponent...", "fas fa-spinner fa-pulse");
-});
+hostBtn.addEventListener('click', () => {
+  peer.on('open', (id) => {
+    peerIdInput.value = id;
+    statusDiv.innerText = 'Share your Peer ID with your friend to start the game!';
+    modeSelection.style.display = 'none';
+    gameUI.style.display = 'block';
+  });
 
-peer.on('connection', connection => {
-    if (!conn) {
-        conn = connection;
-        playerSymbol = 'O';
-        isMyTurn = false;
-        updateStatus("Connected! Opponent's Turn", "fas fa-handshake");
-        setupConnection();
-    }
-});
-
-document.getElementById('new-game').addEventListener('click', () => {
-    resetBoard();
-    updateStatus("Waiting for opponent...", "fas fa-spinner fa-pulse");
-    document.getElementById('peer-id').innerText = peer.id;
-});
-
-document.getElementById('connect').addEventListener('click', () => {
-    const opponentId = document.getElementById('opponent-id').value;
-    conn = peer.connect(opponentId);
-    playerSymbol = 'X';
-    isMyTurn = true;
-    updateStatus("Connected! Your Turn", "fas fa-gamepad");
+  peer.on('connection', (connection) => {
+    conn = connection;
     setupConnection();
+    startGame('O');
+    statusDiv.innerText = 'Connected! Waiting for the opponent to make a move...';
+  });
+
+  peer.on('disconnected', () => {
+    statusDiv.innerText = 'Connection lost. Please refresh and try again.';
+  });
 });
 
-const cells = document.querySelectorAll('.cell');
+joinBtn.addEventListener('click', () => {
+  modeSelection.style.display = 'none';
+  gameUI.style.display = 'block';
+  statusDiv.innerText = 'Enter the Peer ID you wish to connect to:';
+});
 
-cells.forEach(cell => {
-    cell.addEventListener('click', () => {
-        if (cell.innerText === '' && isMyTurn) {
-            cell.innerText = playerSymbol;
-            sendMove(cell.dataset.index);
-            if (checkWin()) {
-                updateStatus("You Win!", "fas fa-trophy");
-                isMyTurn = false;
-            } else if (isBoardFull()) {
-                updateStatus("It's a Draw!", "fas fa-handshake");
-            } else {
-                isMyTurn = false;
-                updateStatus("Opponent's Turn", "fas fa-user-clock");
-            }
-        }
+connectBtn.addEventListener('click', () => {
+  const connectId = connectIdInput.value;
+  if (connectId) {
+    conn = peer.connect(connectId);
+
+    conn.on('open', () => {
+      setupConnection();
+      startGame('X');
+      statusDiv.innerText = 'Connected! Your turn to make a move.';
     });
+
+    conn.on('error', (err) => {
+      statusDiv.innerText = `Error: ${err}`;
+    });
+
+    conn.on('close', () => {
+      statusDiv.innerText = 'Connection closed.';
+    });
+  }
 });
 
 function setupConnection() {
-    conn.on('open', () => {
-        console.log('Connected to peer');
-        conn.on('data', handleIncomingData);
-    });
-}
-
-function sendMove(index) {
-    conn.send({ index, symbol: playerSymbol });
-}
-
-function handleIncomingData(data) {
-    const cell = document.querySelector(`.cell[data-index="${data.index}"]`);
-    cell.innerText = data.symbol;
-    if (checkWin()) {
-        updateStatus("You Lose!", "fas fa-sad-tear");
-        isMyTurn = false;
-    } else if (isBoardFull()) {
-        updateStatus("It's a Draw!", "fas fa-handshake");
-    } else {
-        isMyTurn = true;
-        updateStatus("Your Turn", "fas fa-gamepad");
+  conn.on('data', (data) => {
+    console.log('Received data:', data);
+    if (data.type === 'move') {
+      handleMove(data.cell, data.player);
+    } else if (data.type === 'reset') {
+      resetBoard();
     }
+  });
+
+  conn.on('close', () => {
+    statusDiv.innerText = 'Connection closed. Please refresh to start a new game.';
+  });
+
+  conn.on('error', (err) => {
+    statusDiv.innerText = `Connection error: ${err}`;
+  });
 }
 
-function resetBoard() {
-    cells.forEach(cell => {
-        cell.innerText = '';
-    });
-    document.getElementById('status').innerText = "Waiting for opponent...";
+function startGame(player) {
+  currentPlayer = player;
+  myTurn = currentPlayer === 'X';
+  console.log('Starting game as:', currentPlayer);
+  statusDiv.innerText = myTurn ? 'Your turn!' : "Opponent's turn.";
 }
 
-function checkWin() {
-    const winPatterns = [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6]
+boardDiv.addEventListener('click', (e) => {
+  if (myTurn && e.target.classList.contains('cell') && !e.target.innerText) {
+    const cell = e.target;
+    console.log('Making move:', currentPlayer);
+    makeMove(cell, currentPlayer);
+    conn.send({ type: 'move', cell: cell.dataset.index, player: currentPlayer });
+    myTurn = false;
+    statusDiv.innerText = "Opponent's turn.";
+  }
+});
+
+newGameBtn.addEventListener('click', () => {
+  resetBoard();
+  conn.send({ type: 'reset' });
+  statusDiv.innerText = myTurn ? 'Your turn!' : "Opponent's turn.";
+});
+
+function handleMove(index, player) {
+  console.log('Handling move for:', player, 'at index:', index);
+  const cell = document.querySelector(`[data-index='${index}']`);
+  makeMove(cell, player);
+  myTurn = currentPlayer === 'X';
+  statusDiv.innerText = myTurn ? 'Your turn!' : "Opponent's turn.";
+  console.log('myTurn set to:', myTurn);
+}
+
+function makeMove(cell, player) {
+    cell.innerText = player;
+    cell.classList.add(player);
+    if (checkWin(player)) {
+      statusDiv.innerText = `${player} wins!`;
+      myTurn = false;
+    } else if (isDraw()) {
+      statusDiv.innerText = "It's a draw!";
+      myTurn = false;
+    }
+  }
+  
+  function checkWin(player) {
+    const cellElements = Array.from(document.querySelectorAll('[data-cell]'));
+    const winningCombinations = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], 
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], 
+      [0, 4, 8], [2, 4, 6]
     ];
-
-    return winPatterns.some(pattern => {
-        const [a, b, c] = pattern;
-        return cells[a].innerText === playerSymbol &&
-               cells[a].innerText === cells[b].innerText &&
-               cells[a].innerText === cells[c].innerText;
+  
+    return winningCombinations.some(combination => {
+      return combination.every(index => {
+        return cellElements[index].classList.contains(player);
+      });
     });
-}
-
-function isBoardFull() {
-    return [...cells].every(cell => cell.innerText !== '');
-}
-
-// Function to dynamically update status text and icon
-function updateStatus(message, iconClass) {
-    const statusDiv = document.getElementById('status');
-    statusDiv.innerHTML = `<i class="${iconClass}"></i> ${message}`;
-}
+  }
+  
+  function isDraw() {
+    return [...document.querySelectorAll('[data-cell]')].every(cell => {
+      return cell.innerText === 'X' || cell.innerText === 'O';
+    });
+  }
+  
+  function resetBoard() {
+    const cells = document.querySelectorAll('[data-cell]');
+    cells.forEach(cell => {
+      cell.innerText = '';
+      cell.classList.remove('X', 'O');
+    });
+    myTurn = currentPlayer === 'X';
+    statusDiv.innerText = myTurn ? 'Your turn!' : "Opponent's turn.";
+    console.log('Board reset. myTurn set to:', myTurn);
+  }
+  
+  // Set up the indices for the cells
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach((cell, index) => {
+    cell.dataset.index = index;
+  });
+  
+  // Logging for debug
+  console.log('Script initialized');
+  
