@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusElement = document.getElementById('status');
     const startGameButton = document.getElementById('startGame');
     const joinGameButton = document.getElementById('joinGame');
+    const resetGameButton = document.getElementById('resetGame');
     const connectionIdInput = document.getElementById('connectionId');
 
     function initializeBoard() {
@@ -56,6 +57,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function resetGame() {
+        board = Array(9).fill(null);
+        currentPlayer = 'X';
+        isMyTurn = currentPlayer === 'X'; // Set the initial turn
+        updateBoard();
+        statusElement.textContent = `Player ${currentPlayer}'s turn`;
+        if (conn) {
+            conn.send({ board, currentPlayer, reset: true });
+        }
+    }
+
     startGameButton.addEventListener('click', () => {
         const id = peer.id;
         statusElement.textContent = `Your ID: ${id}`;
@@ -71,11 +83,19 @@ document.addEventListener('DOMContentLoaded', () => {
             isMyTurn = false;
             currentPlayer = 'O';
             conn.on('data', (data) => {
-                board = data.board;
-                currentPlayer = data.currentPlayer === 'X' ? 'O' : 'X';
-                updateBoard();
-                checkGameStatus();
-                isMyTurn = true;
+                if (data.reset) {
+                    board = data.board;
+                    currentPlayer = data.currentPlayer;
+                    updateBoard();
+                    statusElement.textContent = `Player ${currentPlayer}'s turn`;
+                    isMyTurn = currentPlayer === 'O';
+                } else {
+                    board = data.board;
+                    currentPlayer = data.currentPlayer === 'X' ? 'O' : 'X';
+                    updateBoard();
+                    checkGameStatus();
+                    isMyTurn = true;
+                }
             });
         });
     });
@@ -83,13 +103,23 @@ document.addEventListener('DOMContentLoaded', () => {
     peer.on('connection', (connection) => {
         conn = connection;
         conn.on('data', (data) => {
-            board = data.board;
-            currentPlayer = data.currentPlayer === 'X' ? 'O' : 'X';
-            updateBoard();
-            checkGameStatus();
-            isMyTurn = true;
+            if (data.reset) {
+                board = data.board;
+                currentPlayer = data.currentPlayer;
+                updateBoard();
+                statusElement.textContent = `Player ${currentPlayer}'s turn`;
+                isMyTurn = currentPlayer === 'O';
+            } else {
+                board = data.board;
+                currentPlayer = data.currentPlayer === 'X' ? 'O' : 'X';
+                updateBoard();
+                checkGameStatus();
+                isMyTurn = true;
+            }
         });
     });
+
+    resetGameButton.addEventListener('click', resetGame);
 
     initializeBoard();
 });
