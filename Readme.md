@@ -6,7 +6,7 @@ This project is a peer-to-peer Tic Tac Toe game that can be played both as a Chr
 
 ### Online Mode
 
-1. **Access the Game**: Visit the [GitHub Pages URL](https://your-github-username.github.io/tic-tac-toe-p2p/) to access the game online.
+1. **Access the Game**: Visit the [Tic-Tac-Toe-P2P](https://ravipanchani-tomtom.github.io/tic-tac-toe-extension/) to access the game online.
 
 2. **Start a Game**:
     - Click the "Start Game" button to generate your unique connection ID.
