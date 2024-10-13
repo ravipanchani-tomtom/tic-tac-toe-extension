@@ -2,6 +2,8 @@
     display: grid;
     grid-template-columns: repeat(3, 100px);
     grid-gap: 5px;
+    width: 310px;
+    height: 400px
 }
 
 #board div {
